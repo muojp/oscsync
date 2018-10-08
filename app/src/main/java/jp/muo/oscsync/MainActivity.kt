@@ -20,6 +20,7 @@ class OSCConnection(ctx: Context) {
     companion object {
         const val OSC_SUFFIX = ".OSC\""
         const val NETWORK_STATUS_POLL_INTERVAL: Long = 1000
+        val lock = java.util.concurrent.locks.ReentrantLock()
     }
 
     init {
@@ -64,8 +65,7 @@ class OSCConnection(ctx: Context) {
 
     private var connectionState = false
     private var networkChecker: Timer? = null
-    private val lock = java.util.concurrent.locks.ReentrantLock()
-    private fun startNetworkStatusObserver() = lock.withLock {
+    fun startNetworkStatusObserver() = lock.withLock {
         if (this.networkChecker != null) {
             return
         }
