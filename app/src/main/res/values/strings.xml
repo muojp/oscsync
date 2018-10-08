@@ -2,4 +2,5 @@
     <string name="app_name">oscsync</string>
     <string name="connect">Connect</string>
     <string name="chooseSsid">Choose SSID</string>
+    <string name="take_a_picture">Take a Picture</string>
 </resources>

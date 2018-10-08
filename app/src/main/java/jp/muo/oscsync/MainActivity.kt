@@ -5,8 +5,18 @@ import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.Toast
+import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.experimental.CoroutineStart
+import kotlinx.coroutines.experimental.Dispatchers
+import kotlinx.coroutines.experimental.GlobalScope
+import kotlinx.coroutines.experimental.launch
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        const val TAG = "OSCSync"
+        const val CAMERA_IDENTIFIER = "THETA"
+    }
 
     private lateinit var oscConnection: OSCConnection
 
@@ -14,6 +24,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         this.oscConnection = OSCConnection(applicationContext)
+        btn_takePicture.isClickable = false
     }
 
     private fun chooseOne(items: List<String>, cb: (String) -> Unit) = AlertDialog.Builder(this).let {
@@ -22,10 +33,13 @@ class MainActivity : AppCompatActivity() {
         it.show()
     }
 
-    private fun onWiFiDeviceConnected(isConnected: Boolean) =
-            runOnUiThread { Toast.makeText(this, "OSC Device " + (if (isConnected) "connected" else "disconnected"), Toast.LENGTH_LONG).show() }
+    private fun onWiFiDeviceConnected(isConnected: Boolean) = runOnUiThread {
+        Toast.makeText(this, "OSC Device " + (if (isConnected) "connected" else "disconnected"), Toast.LENGTH_LONG).show()
+        this.oscConnection.ensureAppTrafficOnOSCDevice()
+        btn_takePicture.isClickable = isConnected
+    }
 
-    public fun onConnect(view: View) = this.oscConnection.let {
+    fun onConnect(view: View) = this.oscConnection.let {
         it.connectionStatusCallback = this::onWiFiDeviceConnected
         if (!it.isConnected()) {
             // perform connection
@@ -36,5 +50,13 @@ class MainActivity : AppCompatActivity() {
                 else -> chooseOne(deviceNames) { name -> it.attemptToConnect(name) }
             }
         }
+    }
+
+    fun onTakePicture(view: View) {
+        if (!this.oscConnection.isConnected()) {
+            return
+        }
+        val client = OSCClient(this.oscConnection.getWiFiGatewayAddress())
+        GlobalScope.launch(Dispatchers.Main, CoroutineStart.DEFAULT) { client.performTakePicture() }
     }
 }

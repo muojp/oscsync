@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.wifi.WifiConfiguration
 import android.net.wifi.WifiManager
+import java.net.InetAddress
 import java.util.*
 import kotlin.concurrent.timer
 import kotlin.concurrent.withLock
@@ -50,6 +51,16 @@ class OSCConnection(ctx: Context) {
         }
     }
 
+    fun getWiFiGatewayAddress(): String {
+        val gatewayIpInt = wifiManager.dhcpInfo.gateway
+        val addr: ByteArray = ByteArray(4)
+        addr[0] = (gatewayIpInt and 0x000000ff).toByte()
+        addr[1] = (gatewayIpInt and 0x0000ff00).ushr(8).toByte()
+        addr[2] = (gatewayIpInt and 0x00ff0000).ushr(16).toByte()
+        addr[3] = (gatewayIpInt and 0xff000000.toInt()).ushr(24).toByte()
+        val ia = InetAddress.getByAddress(addr)
+        return ia.hostAddress ?: ""
+    }
     val savedOSCDevices: List<WifiConfiguration>
         get() = this.wifiManager.configuredNetworks.filter { it.SSID.endsWith(OSC_SUFFIX) }
 
